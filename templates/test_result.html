@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>نتائج اختبار ECG</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }
+        .container { max-width: 800px; margin: auto; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+        th { background-color: #f2f2f2; }
+        .error { color: red; }
+        .success { color: green; }
+        button { padding: 10px 20px; margin: 10px; }
+        img { max-width: 100%; height: auto; }
+        pre { text-align: left; background-color: #f8f8f8; padding: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>نتائج اختبار ECG</h1>
+        <p><strong>الدقة الكلية:</strong> {{ accuracy }} ({{ correct }}/{{ total }})</p>
+        <p><strong>معرف التقرير:</strong> {{ report_id }}</p>
+        <h3>نتائج الاختبار</h3>
+        <table>
+            <tr>
+                <th>العينة</th>
+                <th>التصنيف الحق contextualizedي</th>
+                <th>التصنيف المتوقع</th>
+                <th>الثقة</th>
+                <th>الحالة</th>
+            </tr>
+            {% for result in results %}
+                <tr>
+                    <td>{{ result.sample }}</td>
+                    <td>{{ result.true_label }}</td>
+                    <td>{{ result.predicted }}</td>
+                    <td>{{ result.confidence }}</td>
+                    <td>{{ result.status }}</td>
+                </tr>
+            {% endfor %}
+        </table>
+        <h3>مصفوفة الالتباس</h3>
+        <img src="data:image/png;base64,{{ cm_image }}" alt="مصفوفة الالتباس">
+        <h3>رسومات إشارات ECG</h3>
+        {% for plot in signal_plots %}
+            <img src="data:image/png;base64,{{ plot }}" alt="إشارة ECG">
+        {% endfor %}
+        <h3>تقرير التصنيف</h3>
+        < Ascending
+        <pre>{{ classification_report }}</pre>
+        <br>
+        <a href="{{ url_for('view_report', report_id=report_id) }}" target="_blank"><button>عرض التقرير</button></a>
+        <br><br>
+        <a href="{{ url_for('index') }}"><button>العودة إلى الرئيسية</button></a>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <p class="{{ category }}">{{ message }}</p>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+</body>
+</html>

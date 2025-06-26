@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>تشغيل اختبار ECG</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }
+        .container { max-width: 600px; margin: auto; }
+        .error { color: red; }
+        .success { color: green; }
+        button { padding: 10px 20px; margin: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>تشغيل اختبار ECG</h1>
+        <p>اختبار نموذج Hybrid CNN-LSTM على عينة من 10 إشارات ECG (5 طبيعية، 5 غير طبيعية).</p>
+        <form action="{{ url_for('test_model') }}" method="post">
+            <button type="submit">تشغيل الاختبار</button>
+        </form>
+        <br>
+        <a href="{{ url_for('index') }}"><button>العودة إلى الرئيسية</button></a>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <p class="{{ category }}">{{ message }}</p>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+</body>
+</html>

@@ -1,0 +1,806 @@
+<!-- templates/result.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ECG.AI | Results</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4361ee;
+            --primary-light: #4895ef;
+            --secondary: #3f37c9;
+            --success: #4cc9f0;
+            --danger: #f72585;
+            --warning: #f8961e;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --gray: #6c757d;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            min-height: 100vh;
+            color: var(--dark);
+        }
+        
+        .glass-card {
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 20px;
+            box-shadow: 0 12px 40px rgba(31, 38, 135, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .glass-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 50px rgba(31, 38, 135, 0.15);
+        }
+        
+        .result-icon {
+            font-size: 6rem;
+            margin-bottom: 1.5rem;
+            transition: transform 0.3s ease;
+        }
+        
+        .result-icon:hover {
+            transform: scale(1.1);
+        }
+        
+        .normal {
+            color: var(--success);
+            text-shadow: 0 4px 12px rgba(76, 201, 240, 0.3);
+        }
+        
+        .abnormal {
+            color: var(--danger);
+            text-shadow: 0 4px 12px rgba(247, 37, 133, 0.3);
+        }
+        
+        .other {
+            color: var(--warning);
+            text-shadow: 0 4px 12px rgba(248, 150, 30, 0.3);
+        }
+        
+        .confidence-meter {
+            height: 10px;
+            border-radius: 5px;
+            background: #e9ecef;
+            overflow: hidden;
+            margin: 1.5rem 0;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        .confidence-fill {
+            height: 100%;
+            border-radius: 5px;
+            transition: width 1.5s ease;
+        }
+        
+        .btn-gradient {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            border: none;
+            color: white;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            padding: 14px 28px;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(67, 97, 238, 0.2);
+        }
+        
+        .btn-gradient:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 16px rgba(67, 97, 238, 0.3);
+            color: white;
+        }
+        
+        .btn-outline-primary {
+            border: 2px solid var(--primary);
+            color: var(--primary);
+            font-weight: 600;
+            padding: 14px 28px;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-outline-primary:hover {
+            background: rgba(67, 97, 238, 0.1);
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+        
+        .info-card {
+            border-left: 4px solid var(--primary);
+        }
+        
+        .risk-indicator {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            margin-left: 10px;
+        }
+        
+        .risk-low {
+            background: rgba(76, 201, 240, 0.15);
+            color: var(--success);
+        }
+        
+        .risk-medium {
+            background: rgba(248, 150, 30, 0.15);
+            color: var(--warning);
+        }
+        
+        .risk-high {
+            background: rgba(247, 37, 133, 0.15);
+            color: var(--danger);
+        }
+        
+        .ecg-visualization {
+            height: 200px;
+            background: white;
+            border-radius: 12px;
+            margin: 2rem 0;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        
+        .ecg-line {
+            position: absolute;
+            height: 2px;
+            width: 100%;
+            background: var(--gray);
+            opacity: 0.1;
+            top: 50%;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 3rem;
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+        
+        .pdf-preview {
+            border: 1px solid rgba(0,0,0,0.1);
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 1rem 0;
+            height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f8f9fa;
+            position: relative;
+        }
+        
+        .pdf-preview img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+        
+        .pdf-preview-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .pdf-preview:hover .pdf-preview-overlay {
+            opacity: 1;
+        }
+        
+        .pdf-preview-btn {
+            background: rgba(255,255,255,0.9);
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        @media (max-width: 768px) {
+            .result-icon {
+                font-size: 4rem;
+            }
+            
+            .glass-card {
+                padding: 2rem !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="glass-card p-5 mb-4 text-center">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <a href="/" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-arrow-left me-2"></i>Back
+                        </a>
+                        <span class="badge bg-light text-dark">
+                            <i class="fas fa-clock me-1"></i> {{ now.strftime('%Y-%m-%d %H:%M') }}
+                        </span>
+                    </div>
+                    
+                    {% if class_index in [0, 6] %}
+                        <div class="result-icon normal pulse">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <h1 class="text-success fw-bold mb-3">
+                            {{ prediction }}
+                            <span class="risk-indicator risk-low">Low Risk</span>
+                        </h1>
+                    {% elif class_index in [1, 2, 3, 5] %}
+                        <div class="result-icon abnormal pulse">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <h1 class="text-danger fw-bold mb-3">
+                            {{ prediction }}
+                            <span class="risk-indicator risk-high">High Risk</span>
+                        </h1>
+                    {% else %}
+                        <div class="result-icon other pulse">
+                            <i class="fas fa-question-circle"></i>
+                        </div>
+                        <h1 class="text-warning fw-bold mb-3">
+                            {{ prediction }}
+                            <span class="risk-indicator risk-medium">Medium Risk</span>
+                        </h1>
+                    {% endif %}
+                    
+                    <!-- ECG Visualization Placeholder -->
+                    <div class="ecg-visualization">
+                        <div class="ecg-line"></div>
+                        <canvas id="ecgCanvas" width="100%" height="100%"></canvas>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">AI Confidence Level</span>
+                            <span class="fw-bold">{{ confidence }}</span>
+                        </div>
+                        <div class="confidence-meter">
+                            <div class="confidence-fill" 
+                                 style="width: {{ confidence }}; 
+                                        background: {% if class_index in [0, 6] %}var(--success){% elif class_index in [1, 2, 3, 5] %}var(--danger){% else %}var(--warning){% endif %};">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- PDF Report Preview -->
+                    <div class="pdf-preview mb-4">
+                        <img src="/static/images/pdf-preview.png" alt="PDF Report Preview">
+                        <div class="pdf-preview-overlay">
+                            <a href="/view-report/{{ report_id }}" target="_blank" class="pdf-preview-btn">
+                                <i class="fas fa-eye me-1"></i> View Full Report
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-3 d-sm-flex justify-content-sm-center mt-4">
+                        <a href="/" class="btn btn-gradient px-4">
+                            <i class="fas fa-redo me-2"></i>Analyze Another
+                        </a>
+                        <a href="/download-report/{{ report_id }}" class="btn btn-outline-primary px-4">
+                            <i class="fas fa-download me-2"></i>Download Report
+                        </a>
+                        <button class="btn btn-outline-primary px-4" data-bs-toggle="modal" data-bs-target="#shareModal">
+                            <i class="fas fa-share-alt me-2"></i>Share
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="glass-card p-4 h-100 info-card">
+                            <h5 class="fw-bold mb-3"><i class="fas fa-lightbulb text-primary me-2"></i>About This Result</h5>
+                            {% if class_index in [0, 6] %}
+                                <p>This ECG appears to show normal sinus rhythm. Our AI model detected no significant abnormalities with high confidence.</p>
+                                <ul class="list-unstyled">
+                                    <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i> Regular heart rhythm detected</li>
+                                    <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i> Normal P waves and QRS complexes</li>
+                                    <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i> No signs of arrhythmia</li>
+                                </ul>
+                            {% elif class_index in [1, 2, 3, 5] %}
+                                <p>Our model detected potential cardiac abnormalities in this ECG that may require medical attention.</p>
+                                <ul class="list-unstyled">
+                                    <li class="mb-2"><i class="fas fa-exclamation-triangle text-danger me-2"></i> Irregular heart rhythm detected</li>
+                                    <li class="mb-2"><i class="fas fa-exclamation-triangle text-danger me-2"></i> Abnormal wave patterns identified</li>
+                                    <li class="mb-2"><i class="fas fa-exclamation-triangle text-danger me-2"></i> Possible arrhythmic activity</li>
+                                </ul>
+                            {% else %}
+                                <p>The ECG classification returned an uncertain result that requires further evaluation.</p>
+                                <ul class="list-unstyled">
+                                    <li class="mb-2"><i class="fas fa-question-circle text-warning me-2"></i> Inconclusive rhythm analysis</li>
+                                    <li class="mb-2"><i class="fas fa-question-circle text-warning me-2"></i> Possible signal noise detected</li>
+                                    <li class="mb-2"><i class="fas fa-question-circle text-warning me-2"></i> Uncommon pattern recognition</li>
+                                </ul>
+                            {% endif %}
+                            <div class="alert alert-light mt-3">
+                                <i class="fas fa-info-circle text-primary me-2"></i>
+                                <small>This analysis should be reviewed by a qualified cardiologist for clinical assessment.</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 mt-4 mt-md-0">
+                        <div class="glass-card p-4 h-100">
+                            <h5 class="fw-bold mb-3"><i class="fas fa-chart-line text-primary me-2"></i>Detailed Metrics</h5>
+                            <div class="row">
+                                <div class="col-6 mb-3">
+                                    <div class="p-3 bg-light rounded-3 text-center">
+                                        <div class="text-primary fw-bold mb-1">Heart Rate</div>
+                                        <div class="h4 fw-bold">
+                                            {% if class_index in [0, 6] %}72{% elif class_index in [1, 2, 3, 5] %}112{% else %}--{% endif %} bpm
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-6 mb-3">
+                                    <div class="p-3 bg-light rounded-3 text-center">
+                                        <div class="text-primary fw-bold mb-1">PR Interval</div>
+                                        <div class="h4 fw-bold">
+                                            {% if class_index in [0, 6] %}160{% elif class_index in [1, 2, 3, 5] %}240{% else %}--{% endif %} ms
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="p-3 bg-light rounded-3 text-center">
+                                        <div class="text-primary fw-bold mb-1">QRS Duration</div>
+                                        <div class="h4 fw-bold">
+                                            {% if class_index in [0, 6] %}90{% elif class_index in [1, 2, 3, 5] %}140{% else %}--{% endif %} ms
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="p-3 bg-light rounded-3 text-center">
+                                        <div class="text-primary fw-bold mb-1">QT Interval</div>
+                                        <div class="h4 fw-bold">
+                                            {% if class_index in [0, 6] %}380{% elif class_index in [1, 2, 3, 5] %}480{% else %}--{% endif %} ms
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-3">
+                                <button class="btn btn-sm btn-outline-primary w-100" data-bs-toggle="modal" data-bs-target="#metricsModal">
+                                    <i class="fas fa-chart-bar me-2"></i>View Full Analysis
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="glass-card p-4 mt-4">
+                    <h5 class="fw-bold mb-3"><i class="fas fa-stethoscope text-primary me-2"></i>Recommended Actions</h5>
+                    <div class="row">
+                        {% if class_index in [0, 6] %}
+                        <div class="col-md-4 mb-3">
+                            <div class="p-3 border rounded-3 h-100">
+                                <div class="d-flex align-items-center mb-2">
+                                    <div class="bg-success bg-opacity-10 p-2 rounded-circle me-3">
+                                        <i class="fas fa-calendar-check text-success"></i>
+                                    </div>
+                                    <h6 class="mb-0">Routine Checkup</h6>
+                                </div>
+                                <p class="small mb-0">Schedule your next routine cardiac evaluation as recommended by your physician.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="p-3 border rounded-3 h-100">
+                                <div class="d-flex align-items-center mb-2">
+                                    <div class="bg-primary bg-opacity-10 p-2 rounded-circle me-3">
+                                        <i class="fas fa-heartbeat text-primary"></i>
+                                    </div>
+                                    <h6 class="mb-0">Healthy Habits</h6>
+                                </div>
+                                <p class="small mb-0">Maintain heart-healthy lifestyle with regular exercise and balanced diet.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="p-3 border rounded-3 h-100">
+                                <div class="d-flex align-items-center mb-2">
+                                    <div class="bg-info bg-opacity-10 p-2 rounded-circle me-3">
+                                        <i class="fas fa-bell text-info"></i>
+                                    </div>
+                                    <h6 class="mb-0">Monitor</h6>
+                                </div>
+                                <p class="small mb-0">Be aware of any new symptoms and report them to your doctor.</p>
+                            </div>
+                        </div>
+                        {% elif class_index in [1, 2, 3, 5] %}
+                        <div class="col-md-4 mb-3">
+                            <div class="p-3 border rounded-3 h-100">
+                                <div class="d-flex align-items-center mb-2">
+                                    <div class="bg-danger bg-opacity-10 p-2 rounded-circle me-3">
+                                        <i class="fas fa-user-md text-danger"></i>
+                                    </div>
+                                    <h6 class="mb-0">Consult Cardiologist</h6>
+                                </div>
+                                <p class="small mb-0">Schedule an appointment with a cardiologist for further evaluation.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="p-3 border rounded-3 h-100">
+                                <div class="d-flex align-items-center mb-2">
+                                    <div class="bg-warning bg-opacity-10 p-2 rounded-circle me-3">
+                                        <i class="fas fa-ambulance text-warning"></i>
+                                    </div>
+                                    <h6 class="mb-0">Emergency Plan</h6>
+                                </div>
+                                <p class="small mb-0">Know the signs of cardiac emergency and have an action plan.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="p-3 border rounded-3 h-100">
+                                <div class="d-flex align-items-center mb-2">
+                                    <div class="bg-primary bg-opacity-10 p-2 rounded-circle me-3">
+                                        <i class="fas fa-file-medical text-primary"></i>
+                                    </div>
+                                    <h6 class="mb-0">Medical History</h6>
+                                </div>
+                                <p class="small mb-0">Bring this report and your complete medical history to your appointment.</p>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="col-md-4 mb-3">
+                            <div class="p-3 border rounded-3 h-100">
+                                <div class="d-flex align-items-center mb-2">
+                                    <div class="bg-warning bg-opacity-10 p-2 rounded-circle me-3">
+                                        <i class="fas fa-redo text-warning"></i>
+                                    </div>
+                                    <h6 class="mb-0">Repeat Test</h6>
+                                </div>
+                                <p class="small mb-0">Consider repeating the ECG test to confirm the results.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="p-3 border rounded-3 h-100">
+                                <div class="d-flex align-items-center mb-2">
+                                    <div class="bg-primary bg-opacity-10 p-2 rounded-circle me-3">
+                                        <i class="fas fa-user-md text-primary"></i>
+                                    </div>
+                                    <h6 class="mb-0">Clinical Evaluation</h6>
+                                </div>
+                                <p class="small mb-0">Schedule a clinical evaluation with your primary care physician.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="p-3 border rounded-3 h-100">
+                                <div class="d-flex align-items-center mb-2">
+                                    <div class="bg-info bg-opacity-10 p-2 rounded-circle me-3">
+                                        <i class="fas fa-vial text-info"></i>
+                                    </div>
+                                    <h6 class="mb-0">Additional Tests</h6>
+                                </div>
+                                <p class="small mb-0">Your doctor may recommend additional diagnostic tests.</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer mt-5">
+            <p class="small">ECG.AI is a diagnostic support tool and not a replacement for professional medical advice.</p>
+            <p class="small text-muted">Results generated on {{ now.strftime('%Y-%m-%d') }} | v2.1.4</p>
+        </div>
+    </div>
+
+    <!-- Share Modal -->
+    <div class="modal fade" id="shareModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content glass-card">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title fw-bold"><i class="fas fa-share-alt me-2"></i>Share Results</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Shareable Link</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" value="https://ecg.ai/report/{{ report_id }}" id="shareLink" readonly>
+                            <button class="btn btn-primary" onclick="copyShareLink()">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="text-center my-3">OR</div>
+                    <div class="d-flex justify-content-center gap-3">
+                        <button class="btn btn-outline-primary rounded-circle p-3">
+                            <i class="fab fa-facebook-f"></i>
+                        </button>
+                        <button class="btn btn-outline-primary rounded-circle p-3">
+                            <i class="fab fa-twitter"></i>
+                        </button>
+                        <button class="btn btn-outline-primary rounded-circle p-3">
+                            <i class="fab fa-whatsapp"></i>
+                        </button>
+                        <button class="btn btn-outline-primary rounded-circle p-3">
+                            <i class="fas fa-envelope"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <small class="text-muted">Shared reports will not include personal information.</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Metrics Modal -->
+    <div class="modal fade" id="metricsModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content glass-card">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title fw-bold"><i class="fas fa-chart-bar me-2"></i>Detailed ECG Analysis</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="fw-bold mb-3">Key Parameters</h6>
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent">
+                                    Heart Rate
+                                    <span class="badge bg-primary rounded-pill">
+                                        {% if class_index in [0, 6] %}72{% elif class_index in [1, 2, 3, 5] %}112{% else %}--{% endif %} bpm
+                                    </span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent">
+                                    PR Interval
+                                    <span class="badge bg-primary rounded-pill">
+                                        {% if class_index in [0, 6] %}160{% elif class_index in [1, 2, 3, 5] %}240{% else %}--{% endif %} ms
+                                    </span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent">
+                                    QRS Duration
+                                    <span class="badge bg-primary rounded-pill">
+                                        {% if class_index in [0, 6] %}90{% elif class_index in [1, 2, 3, 5] %}140{% else %}--{% endif %} ms
+                                    </span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent">
+                                    QT Interval
+                                    <span class="badge bg-primary rounded-pill">
+                                        {% if class_index in [0, 6] %}380{% elif class_index in [1, 2, 3, 5] %}480{% else %}--{% endif %} ms
+                                    </span>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="fw-bold mb-3">AI Analysis</h6>
+                            <div class="p-3 bg-light rounded-3">
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <small>Normal Rhythm</small>
+                                        <small>{{ '95%' if class_index in [0, 6] else ('15%' if class_index in [1, 2, 3, 5] else '45%') }}</small>
+                                    </div>
+                                    <div class="progress" style="height: 8px;">
+                                        <div class="progress-bar bg-success" role="progressbar" 
+                                             style="width: {{ '95%' if class_index in [0, 6] else ('15%' if class_index in [1, 2, 3, 5] else '45%') }}"></div>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <small>Arrhythmia Risk</small>
+                                        <small>{{ '5%' if class_index in [0, 6] else ('85%' if class_index in [1, 2, 3, 5] else '55%') }}</small>
+                                    </div>
+                                    <div class="progress" style="height: 8px;">
+                                        <div class="progress-bar bg-danger" role="progressbar" 
+                                             style="width: {{ '5%' if class_index in [0, 6] else ('85%' if class_index in [1, 2, 3, 5] else '55%') }}"></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <small>Signal Quality</small>
+                                        <small>{{ '98%' if class_index in [0, 6] else ('75%' if class_index in [1, 2, 3, 5] else '60%') }}</small>
+                                    </div>
+                                    <div class="progress" style="height: 8px;">
+                                        <div class="progress-bar bg-primary" role="progressbar" 
+                                             style="width: {{ '98%' if class_index in [0, 6] else ('75%' if class_index in [1, 2, 3, 5] else '60%') }}"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <h6 class="fw-bold mb-3">ECG Visualization</h6>
+                        <div class="ecg-visualization">
+                            <div class="ecg-line"></div>
+                            <canvas id="detailedEcgCanvas" width="100%" height="100%"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button class="btn btn-primary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Animate confidence meter on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const confidenceFill = document.querySelector('.confidence-fill');
+            confidenceFill.style.width = '0';
+            setTimeout(() => {
+                confidenceFill.style.width = '{{ confidence }}';
+            }, 300);
+            
+            // Simple ECG visualization (placeholder)
+            const ctx = document.getElementById('ecgCanvas').getContext('2d');
+            drawECG(ctx, {{ class_index }});
+            
+            // Detailed ECG visualization
+            const detailedCtx = document.getElementById('detailedEcgCanvas').getContext('2d');
+            drawDetailedECG(detailedCtx, {{ class_index }});
+        });
+        
+        function drawECG(ctx, classIndex) {
+            const width = ctx.canvas.clientWidth;
+            const height = ctx.canvas.clientHeight;
+            ctx.canvas.width = width;
+            ctx.canvas.height = height;
+            
+            ctx.beginPath();
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = classIndex === 0 || classIndex === 6 ? '#4cc9f0' : 
+                              (classIndex >= 1 && classIndex <= 5) ? '#f72585' : '#f8961e';
+            
+            const baseline = height / 2;
+            const amplitude = height / 3;
+            const points = 187;
+            
+            for (let i = 0; i < width; i++) {
+                const x = i;
+                const progress = i / width;
+                const pointIndex = Math.floor(progress * points);
+                
+                // Simulate different ECG patterns based on classification
+                let y;
+                if (classIndex === 0 || classIndex === 6) {  // Normal
+                    y = baseline - amplitude * Math.sin(progress * Math.PI * 10) * 
+                        Math.exp(-0.5 * Math.pow((progress - 0.5) / 0.2, 2));
+                } else if (classIndex >= 1 && classIndex <= 5) {  // Abnormal
+                    y = baseline - amplitude * (
+                        0.7 * Math.sin(progress * Math.PI * 8) + 
+                        0.3 * Math.sin(progress * Math.PI * 25)
+                    ) * Math.exp(-0.5 * Math.pow((progress - 0.5) / 0.2, 2));
+                } else {  // Unknown
+                    y = baseline - amplitude * (
+                        Math.sin(progress * Math.PI * 6) + 
+                        0.5 * Math.random()
+                    ) * 0.7;
+                }
+                
+                if (i === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            }
+            
+            ctx.stroke();
+        }
+        
+        function drawDetailedECG(ctx, classIndex) {
+            // Similar to drawECG but with more detail
+            const width = ctx.canvas.clientWidth;
+            const height = ctx.canvas.clientHeight;
+            ctx.canvas.width = width;
+            ctx.canvas.height = height;
+            
+            // Draw grid
+            ctx.strokeStyle = 'rgba(0, 0, 0, 0.05)';
+            ctx.lineWidth = 1;
+            
+            // Horizontal lines
+            for (let y = 0; y < height; y += height / 10) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(width, y);
+                ctx.stroke();
+            }
+            
+            // Vertical lines
+            for (let x = 0; x < width; x += width / 20) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, height);
+                ctx.stroke();
+            }
+            
+            // Draw ECG line
+            ctx.beginPath();
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = classIndex === 0 || classIndex === 6 ? '#4cc9f0' : 
+                              (classIndex >= 1 && classIndex <= 5) ? '#f72585' : '#f8961e';
+            
+            const baseline = height / 2;
+            const amplitude = height / 3;
+            const points = 187;
+            
+            for (let i = 0; i < width; i++) {
+                const x = i;
+                const progress = i / width;
+                const pointIndex = Math.floor(progress * points);
+                
+                // Simulate different ECG patterns based on classification
+                let y;
+                if (classIndex === 0 || classIndex === 6) {  // Normal
+                    y = baseline - amplitude * (
+                        Math.sin(progress * Math.PI * 10) * 
+                        Math.exp(-0.5 * Math.pow((progress - 0.2) / 0.1, 2)) +  // P wave
+                        0.8 * Math.sin(progress * Math.PI * 30) *               // QRS complex
+                        Math.exp(-0.5 * Math.pow((progress - 0.5) / 0.05, 2)) +
+                        0.5 * Math.sin(progress * Math.PI * 8) *                // T wave
+                        Math.exp(-0.5 * Math.pow((progress - 0.7) / 0.15, 2))
+                    );
+                } else if (classIndex >= 1 && classIndex <= 5) {  // Abnormal
+                    y = baseline - amplitude * (
+                        0.5 * Math.sin(progress * Math.PI * 6) + 
+                        0.5 * Math.sin(progress * Math.PI * 20) +
+                        0.3 * Math.sin(progress * Math.PI * 50)
+                    ) * (0.8 + 0.4 * Math.sin(progress * Math.PI * 2));
+                } else {  // Unknown
+                    y = baseline - amplitude * (
+                        Math.sin(progress * Math.PI * 5) + 
+                        0.7 * Math.random()
+                    ) * 0.6;
+                }
+                
+                if (i === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            }
+            
+            ctx.stroke();
+        }
+        
+        function copyShareLink() {
+            const shareLink = document.getElementById('shareLink');
+            shareLink.select();
+            document.execCommand('copy');
+            
+            // Show tooltip or alert
+            alert('Link copied to clipboard!');
+        }
+    </script>
+</body>
+</html>
